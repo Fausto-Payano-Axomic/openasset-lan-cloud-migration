@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/adesmier/openasset-migration/issues"
   },
-  "homepage": "https://github.com/adesmier/openasset-migration#readme"
+  "homepage": "https://github.com/adesmier/openasset-migration#readme",
+  "dependencies": {
+    "mysql": "^2.13.0"
+  }
 }
