@@ -1,4 +1,5 @@
 var Connection = require('./dbConnection.js');
+var queries = require('./sqlQueries.js');
 
 //default database connection details
 var host = 'localhost';
@@ -9,37 +10,74 @@ var password = '0p3nass3t';
 
 var connection = new Connection(host, database, port, user, password);
 
-//get image store location
-var imgStoreSqlQuery = 'SELECT local_path FROM image_store';
+//globals - bad!!!
+var results = [];
+var json = [];
 
-//main SQL query
-var mainSqlQuery = 'SELECT image.ied, category.storage_name, image.filename, image.md5_at_upload, \
-                      image.original_filesize, image.square_filesize, image.thumbnail_filesize, \
-                      image.small_filesize, image.webview_filesize, default_image_size.postfix, \
-                      image_size.filesize, file_format.suffix \
-               FROM category LEFT JOIN image \
-               ON category.id=image.category_id LEFT JOIN image_size \
-               ON image.id=image_size.image_id LEFT JOIN default_image_size \
-               ON image_size.default_image_size_id=default_image_size.id LEFT JOIN file_format \
-               ON default_image_size.file_format_id=file_format.id \
-               WHERE image.alive=1 AND default_image_size.alive=1 LIMIT 50';
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 connection.initializeConnection().then(function(dbConnectionStatus){
 
     console.log(dbConnectionStatus);
-    return connection.runQuery(mainSqlQuery);
+    return Promise.all([connection.runQuery(queries.mainSqlQuery), connection.runQuery(queries.imgStoreSqlQuery), connection.runQuery(queries.settingsSqlQuery)]);
 
 }).then(function(queryResult){
 
-    console.log(queryResult);
+    results = queryResult;
     return connection.closeConnection();
 
 }).then(function(dbCloseStatus){
 
     console.log(dbCloseStatus);
-    console.log('Continuing with script...');
+    console.log(results[0]);
+
+    var file_path = results[1][0].local_path;
+    file_path = file_path.replace('/', '\\');
+
+    var currentImageId;
+
+    for(var i = 0; i < results[0].length; i++){
+
+        var newImageId = results[0][i].id;
+        if(newImageId === currentImageId){
+
+        } else {
+
+            if(results[0][i].project_code !== null){
+                var original = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+                var square = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+                var thumbnail = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+                var small = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+                var webview = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+            } else {
+                var original = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+                var square = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+                var thumbnail = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+                var small = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+                var webview = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+            }
+
+
+
+
+        }
+
+
+
+
+
+    }
+
+
+
+
+
+
 
 
 

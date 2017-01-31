@@ -1,4 +1,29 @@
 #! /usr/bin/perl
+# <axomicCopyrightNotice>
+#
+# Product:            OpenAsset
+# Version:            10.2.4
+# Branch:             master
+# Revision:           d17ebb4
+# Created:            20-07-2016 10:50
+# Release created by: Mike Driver (mike)
+#
+# All rights reserved Axomic Ltd, 2008-2016
+# www.axomic.com
+# info@axomic.com
+#
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+# AXOMIC LTD OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# </axomicCopyrightNotice>
 
 
 # Migrates local images to a CloudFront S3 Store.
@@ -208,7 +233,6 @@ sub readInFilesAlreadyChecked($) {
             my $recreate = &clean($rowAR->[3]);
             my $imageId = &clean($rowAR->[0]);
             if ($md5HR->{$imageId} && !$recreate) {
-			$log->warn('JLS deleting old');
                 delete $md5HR->{$imageId};
             }
         }
@@ -283,7 +307,7 @@ SELECT id,
        alternate_store_id,
        original_filesize
 FROM image
-WHERE alive = 1 ORDER BY original_filesize ASC;
+WHERE alive = 1 ORDER BY original_filesize DESC;
 EOT
     my $sqlHandler  = OpenAsset::SQL::Model::SQLHandler->new();
     my $resultAR    = $sqlHandler->rawQueryHashRef($sql);
@@ -483,7 +507,7 @@ sub uploadFileToS3($$$$$$){
                     .$OpenAsset::Setup::CLOUD_ID,
     ));
 
-    my $url = 'http://'.$bucket.'.s3-accelerate.amazonaws.com';
+    my $url = 'http://'.$bucket.'.s3.amazonaws.com';
 
     my $contentAR = [
             key => $fileKey,
@@ -504,11 +528,6 @@ sub uploadFileToS3($$$$$$){
     );
     {
         my $gen = $req->content();
-		if (ref($gen) eq "CODE") {
-		
-		} else {
-		   $log->warn('JLS gen is', Dumper($gen));
-		}
                 die unless ref($gen) eq "CODE";
         my $i = 0;
         $req->content(
