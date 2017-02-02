@@ -1,6 +1,7 @@
 {
-  "database": "SNO001",
+  "client": "SNO001",
   "databaseSize": "8349282",
+  "imageStore": "G:/OpenAsset_Images",
   "aliveImages": "18635",
   "imagesUploaded": "0",
   "imagesRemaining": "18635",
@@ -10,7 +11,7 @@
       "md5": "sd8uj48rj34rjs2309ers45f",
       "localPath": "G:/OpenAsset_Images/Events/E_140203.jpg",
       "type": "image\\jpg",
-	  "exists_locally": true,
+      "exists_locally": true,
       "uploaded": {
         "status": false,
         "message": ""
@@ -20,7 +21,7 @@
           "size": "medium",
           "localPath": "G:/OpenAsset_Images/Events/E_140203_jpg/E_140203_medium.jpg",
           "type": "image\\jpg",
-		  "exists_locally": true,
+          "exists_locally": true,
           "uploadedStatus": {
             "status": false,
             "message": ""
@@ -30,7 +31,7 @@
           "size": "thumbnail",
           "localPath": "G:/OpenAsset_Images/Events/E_140203_jpg/E_140203_thumbnail.jpg",
           "type": "image\\jpg",
-		  "exists_locally": true,
+          "exists_locally": true,
           "uploadedStatus": {
             "status": false,
             "message": ""
@@ -40,7 +41,7 @@
           "size": "webview",
           "localPath": "G:/OpenAsset_Images/Events/E_140203_jpg/E_140203_webview.jpg",
           "type": "image\\jpg",
-		  "exists_locally": true,
+          "exists_locally": true,
           "uploadedStatus": {
             "status": false,
             "message": ""
@@ -53,7 +54,7 @@
       "md5": "sd8uj48rj34rjs2309ers45f",
       "localPath": "G:/OpenAsset_Images/Events/E_140203.jpg",
       "type": "image\\jpg",
-	  "exists_locally": true,
+      "exists_locally": true,
       "uploaded": {
         "status": false,
         "message": ""
@@ -63,7 +64,7 @@
           "size": "medium",
           "localPath": "G:/OpenAsset_Images/Events/E_140203_jpg/E_140203_medium.jpg",
           "type": "image\\jpg",
-		  "exists_locally": true,
+          "exists_locally": true,
           "uploadedStatus": {
             "status": false,
             "message": ""
@@ -73,7 +74,7 @@
           "size": "thumbnail",
           "localPath": "G:/OpenAsset_Images/Events/E_140203_jpg/E_140203_thumbnail.jpg",
           "type": "image\\jpg",
-		  "exists_locally": true,
+          "exists_locally": true,
           "uploadedStatus": {
             "status": false,
             "message": ""
@@ -83,7 +84,7 @@
           "size": "webview",
           "localPath": "G:/OpenAsset_Images/Events/E_140203_jpg/E_140203_webview.jpg",
           "type": "image\\jpg",
-		  "exists_locally": true,
+          "exists_locally": true,
           "uploadedStatus": {
             "status": false,
             "message": ""

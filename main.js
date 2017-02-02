@@ -1,18 +1,21 @@
-var Connection = require('./dbConnection.js');
+var DBConnection = require('./DBConnection.js');
+var JsonModel = require('./JsonModel.js');
 var queries = require('./sqlQueries.js');
 
 //default database connection details
-var host = 'localhost';
-var database = 'sno001' //change to OpenAsset_4_0
+var host = '192.168.0.29';
+var database = 'OpenAsset_4_0' //change to OpenAsset_4_0
 var port = 3306;
 var user = 'openasset';
 var password = '0p3nass3t';
 
-var connection = new Connection(host, database, port, user, password);
+var connection = new DBConnection(host, database, port, user, password);
 
 //globals - bad!!!
-var results = [];
-var json = [];
+var mainQuery = [];
+var imgStore = [];
+var gblSettings = [];
+var aliveImages = [];
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -24,54 +27,91 @@ var json = [];
 connection.initializeConnection().then(function(dbConnectionStatus){
 
     console.log(dbConnectionStatus);
-    return Promise.all([connection.runQuery(queries.mainSqlQuery), connection.runQuery(queries.imgStoreSqlQuery), connection.runQuery(queries.settingsSqlQuery)]);
+    return Promise.all([connection.runQuery(queries.mainSqlQuery), connection.runQuery(queries.imgStoreSqlQuery), 
+                        connection.runQuery(queries.settingsSqlQuery), connection.runQuery(queries.countAliveImages)]);
 
 }).then(function(queryResult){
 
-    results = queryResult;
+    //TODO: Could use spreads here to pass previous promise returns down the chain
+    //rather than using globals
+    mainQuery = queryResult[0];
+    imgStore = queryResult[1];
+    gblSettings = queryResult[2];
+    aliveImages = queryResult[3];
     return connection.closeConnection();
 
 }).then(function(dbCloseStatus){
 
     console.log(dbCloseStatus);
-    console.log(results[0]);
+    //console.log(results[3]);
 
-    var file_path = results[1][0].local_path;
-    file_path = file_path.replace('/', '\\');
+    var json = new JsonModel(database, imgStore[0].local_path, aliveImages[0].images);
 
-    var currentImageId;
-
-    for(var i = 0; i < results[0].length; i++){
-
-        var newImageId = results[0][i].id;
-        if(newImageId === currentImageId){
-
-        } else {
-
-            if(results[0][i].project_code !== null){
-                var original = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-                var square = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-                var thumbnail = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-                var small = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-                var webview = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-            } else {
-                var original = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-                var square = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-                var thumbnail = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-                var small = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-                var webview = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-            }
-
-
-
-
-        }
+    console.log(json.getItem('imageStore'));
 
 
 
 
 
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // var file_path = results[1][0].local_path;
+    // file_path = file_path.replace('/', '\\');
+
+    // var currentImageId;
+
+    // for(var i = 0; i < results[0].length; i++){
+
+    //     var newImageId = results[0][i].id;
+    //     if(newImageId === currentImageId){
+
+    //     } else {
+
+    //         if(results[0][i].project_code !== null){
+    //             var original = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+    //             var square = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+    //             var thumbnail = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+    //             var small = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+    //             var webview = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
+    //         } else {
+    //             var original = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+    //             var square = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+    //             var thumbnail = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+    //             var small = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+    //             var webview = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
+    //         }
+
+
+    //     }
+
+    // }
 
 
 

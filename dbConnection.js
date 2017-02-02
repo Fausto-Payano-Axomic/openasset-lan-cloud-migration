@@ -1,6 +1,6 @@
 var mysql = require('mysql');
 
-function Connection(host, database, port, user, password){
+function DBConnection(host, database, port, user, password){
     this.host = host,
     this.database = database,
     this.port = port,
@@ -9,7 +9,7 @@ function Connection(host, database, port, user, password){
     this.DBConnection = '';
 }
 
-Connection.prototype.initializeConnection = function(){
+DBConnection.prototype.initializeConnection = function(){
     var self = this;
     return new Promise(function(resolve, reject){
 
@@ -38,7 +38,7 @@ Connection.prototype.initializeConnection = function(){
     });
 }
 
-Connection.prototype.runQuery = function(sqlQuery){
+DBConnection.prototype.runQuery = function(sqlQuery){
     var self = this;
     return new Promise(function(resolve, reject){
 
@@ -55,7 +55,7 @@ Connection.prototype.runQuery = function(sqlQuery){
     });
 }
 
-Connection.prototype.closeConnection = function(){
+DBConnection.prototype.closeConnection = function(){
     var self = this;
     return new Promise(function(resolve, reject){
 
@@ -73,4 +73,4 @@ Connection.prototype.closeConnection = function(){
 }
 
 
-module.exports = Connection;
+module.exports = DBConnection;
