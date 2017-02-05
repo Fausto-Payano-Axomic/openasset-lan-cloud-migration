@@ -1,18 +1,20 @@
 //TODO: Could change this to use revealing module pattern so values can't be
 //set by going 'json.database' etc
 
-function JsonModel(database, imgStore, images){
-    this.client = database,
-    this.databaseSize = 0,
-    this.imageStore = imgStore,
-    this.aliveImages = images,
-    this.imagesUploaded = 0,
-    this.imagesRemaining = images,
-    this.images = []
+function JsonModel(object){
+    for(var key in object){
+        if(object.hasOwnProperty(key)){
+            this[key] = object[key];
+        }
+    }
 }
 
 JsonModel.prototype.addItem = function(item, value){
-    this[item] = value;
+    if(Array.isArray(this[item])){
+        this[item].push(value);
+    } else {
+        this[item] = value;
+    }   
 }
 
 JsonModel.prototype.getItem = function(item){

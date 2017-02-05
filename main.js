@@ -2,6 +2,8 @@ var DBConnection = require('./DBConnection.js');
 var JsonModel = require('./JsonModel.js');
 var queries = require('./sqlQueries.js');
 
+var fs = require('fs');
+
 //default database connection details
 var host = '192.168.0.29';
 var database = 'OpenAsset_4_0' //change to OpenAsset_4_0
@@ -14,8 +16,14 @@ var connection = new DBConnection(host, database, port, user, password);
 //globals - bad!!!
 var mainQuery = [];
 var imgStore = [];
-var gblSettings = [];
+var glbSettings = [];
 var aliveImages = [];
+var builtInSizes = [
+    'thumbnail',
+    'webview',
+    'small',
+    'square'
+];
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -36,18 +44,112 @@ connection.initializeConnection().then(function(dbConnectionStatus){
     //rather than using globals
     mainQuery = queryResult[0];
     imgStore = queryResult[1];
-    gblSettings = queryResult[2];
+    glbSettings = queryResult[2];
     aliveImages = queryResult[3];
     return connection.closeConnection();
 
 }).then(function(dbCloseStatus){
 
     console.log(dbCloseStatus);
-    //console.log(results[3]);
 
-    var json = new JsonModel(database, imgStore[0].local_path, aliveImages[0].images);
+    //get value of client code
+    for(var i = 0; i < glbSettings.length; i++){
+        if(glbSettings[i].code === 'licenseHolderCode'){
+            //Check scope of clientCode variable!!
+            var clientCode = glbSettings[i].value_json;
+            clientCode = clientCode.replace('[','');
+            clientCode = clientCode.replace(']','');
+            clientCode = clientCode.replace(new RegExp('"', 'g'),''); //replace all instances
+        }
+    }
 
-    console.log(json.getItem('imageStore'));
+    var imageStore = imgStore[0].local_path;
+    imageStore = imageStore.replace(new RegExp('\/', 'g'),'\\');
+
+    var jsonModel = new JsonModel({
+        client: clientCode,
+        databaseSize: 0,
+        imageStore: imageStore,
+        aliveImages: aliveImages[0].images,
+        imagesUploaded: 0,
+        imagesRemaining: aliveImages[0].images,
+        images: []
+    });
+
+    for(var j = 0; j < mainQuery.length; j++){
+        //first get filename and extension
+        var filename = mainQuery[j].filename;
+        var extensionPos = filename.lastIndexOf('.');
+        var extension = filename.substring(extensionPos+1, filename.length);
+        extension = extension.toLowerCase();
+
+        //get type of category
+        var categoryPath = mainQuery[j].category;
+        if(categoryPath === 'Projects'){
+            categoryPath += '\\' + mainQuery[j].project_code;
+        }
+
+        //get local path of file
+        var localPath = jsonModel.getItem('imageStore');
+        localPath = localPath.concat('\\', categoryPath);
+        var orignalPath = localPath.concat('\\', filename);
+
+        //get file mime type
+        if(extension === 'pdf'){
+            var mimeType = 'application/pdf';
+        } else {
+            mimeType = 'image/' + extension;
+        }
+
+        //check if original file exists locally
+        var originalExistsLocally = false;
+        if(fs.existsSync(orignalPath)){
+            originalExistsLocally = true;
+        }
+
+        var jsonImage = new JsonModel({
+            filename: filename,
+            md5: mainQuery[j].md5_at_upload,
+            localPath: orignalPath,
+            type: mimeType,
+            exists_locally: originalExistsLocally,
+            uploaded: {
+                status: false,
+                message: 'upload pending',
+            },
+            sizes: []
+        });
+
+        for(var k = 0; k < builtInSizes.length; k++){
+            var filePrefix = filename.substring(0, extensionPos);
+            var folderName = filePrefix.concat('_jpg');
+            var builtInName = filePrefix.concat('_', builtInSizes[k], '.jpg');
+            var builtInPath = localPath.concat('\\', folderName, '\\', builtInName);
+
+            var builtInExistsLocally = false;
+            if(fs.existsSync(builtInPath)){
+                builtInExistsLocally = true;
+            }
+
+            var jsonSizes = new JsonModel({
+                size: builtInSizes[k],
+                localPath: builtInPath,
+                type: 'image/jpg',
+                exists_locally: builtInExistsLocally,
+                uploaded: {
+                    status: false,
+                    message: 'upload pending'
+                }
+            });
+
+            jsonImage.addItem('sizes', jsonSizes);
+        }
+
+        jsonModel.addItem('images', jsonImage);
+
+    }
+
+    console.log(JSON.stringify(jsonModel));
 
 
 
@@ -73,45 +175,6 @@ connection.initializeConnection().then(function(dbConnectionStatus){
 
 
 
-
-
-
-
-
-
-
-
-
-    // var file_path = results[1][0].local_path;
-    // file_path = file_path.replace('/', '\\');
-
-    // var currentImageId;
-
-    // for(var i = 0; i < results[0].length; i++){
-
-    //     var newImageId = results[0][i].id;
-    //     if(newImageId === currentImageId){
-
-    //     } else {
-
-    //         if(results[0][i].project_code !== null){
-    //             var original = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-    //             var square = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-    //             var thumbnail = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-    //             var small = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-    //             var webview = file_path.concat('\\', results[0][i].category, '\\', results[0][i].project_code, '\\', results[0][i].filename);
-    //         } else {
-    //             var original = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-    //             var square = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-    //             var thumbnail = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-    //             var small = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-    //             var webview = file_path.concat('\\', results[0][i].category, '\\', '\\', results[0][i].filename);
-    //         }
-
-
-    //     }
-
-    // }
 
 
 
