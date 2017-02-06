@@ -1,12 +1,13 @@
 var DBConnection = require('./DBConnection.js');
 var JsonModel = require('./JsonModel.js');
+var Data = require('./DataOperations.js');
 var queries = require('./sqlQueries.js');
 
 var fs = require('fs');
 
 //default database connection details
-var host = '192.168.0.29';
-var database = 'OpenAsset_4_0' //change to OpenAsset_4_0
+var host = 'localhost';
+var database = 'mol001' //change to OpenAsset_4_0
 var port = 3306;
 var user = 'openasset';
 var password = '0p3nass3t';
@@ -34,8 +35,8 @@ var builtInSizes = [
 
 connection.initializeConnection().then(function(dbConnectionStatus){
 
-    console.log(dbConnectionStatus);
-    return Promise.all([connection.runQuery(queries.mainSqlQuery), connection.runQuery(queries.imgStoreSqlQuery), 
+    //console.log(dbConnectionStatus);
+    return Promise.all([connection.runQuery(queries.mainSqlQuery), connection.runQuery(queries.imgStoreSqlQuery),
                         connection.runQuery(queries.settingsSqlQuery), connection.runQuery(queries.countAliveImages)]);
 
 }).then(function(queryResult){
@@ -50,21 +51,18 @@ connection.initializeConnection().then(function(dbConnectionStatus){
 
 }).then(function(dbCloseStatus){
 
-    console.log(dbCloseStatus);
+    //console.log(dbCloseStatus);
+    var data = new Data();
 
     //get value of client code
     for(var i = 0; i < glbSettings.length; i++){
         if(glbSettings[i].code === 'licenseHolderCode'){
             //Check scope of clientCode variable!!
-            var clientCode = glbSettings[i].value_json;
-            clientCode = clientCode.replace('[','');
-            clientCode = clientCode.replace(']','');
-            clientCode = clientCode.replace(new RegExp('"', 'g'),''); //replace all instances
+            var clientCode = data.cleanClientCode(glbSettings[i].valu_json);
         }
     }
 
-    var imageStore = imgStore[0].local_path;
-    imageStore = imageStore.replace(new RegExp('\/', 'g'),'\\');
+    var imageStore = data.cleanImageStorePath(imgStore[0].local_path);
 
     var jsonModel = new JsonModel({
         client: clientCode,
@@ -77,38 +75,20 @@ connection.initializeConnection().then(function(dbConnectionStatus){
     });
 
     for(var j = 0; j < mainQuery.length; j++){
-        //first get filename and extension
-        var filename = mainQuery[j].filename;
-        var extensionPos = filename.lastIndexOf('.');
-        var extension = filename.substring(extensionPos+1, filename.length);
-        extension = extension.toLowerCase();
 
+        //return object of filename and extension
+        var fileData = data.getExtandPos(mainQuery[j].filename);
         //get type of category
-        var categoryPath = mainQuery[j].category;
-        if(categoryPath === 'Projects'){
-            categoryPath += '\\' + mainQuery[j].project_code;
-        }
-
-        //get local path of file
-        var localPath = jsonModel.getItem('imageStore');
-        localPath = localPath.concat('\\', categoryPath);
-        var orignalPath = localPath.concat('\\', filename);
-
+        var categoryPath = data.getCategoryPath(mainQuery[j].category, mainQuery[j].project_code);
+        //get local path of orginal file
+        var orignalPath = data.buildFilePath(jsonModel.getItem('imageStore'), categoryPath, fileData, false);
         //get file mime type
-        if(extension === 'pdf'){
-            var mimeType = 'application/pdf';
-        } else {
-            mimeType = 'image/' + extension;
-        }
-
+        var mimeType = data.setMimeType(fileData);
         //check if original file exists locally
-        var originalExistsLocally = false;
-        if(fs.existsSync(orignalPath)){
-            originalExistsLocally = true;
-        }
+        var originalExistsLocally = data.checkFileExists(orignalPath);
 
         var jsonImage = new JsonModel({
-            filename: filename,
+            filename: fileData.filename,
             md5: mainQuery[j].md5_at_upload,
             localPath: orignalPath,
             type: mimeType,
@@ -121,15 +101,9 @@ connection.initializeConnection().then(function(dbConnectionStatus){
         });
 
         for(var k = 0; k < builtInSizes.length; k++){
-            var filePrefix = filename.substring(0, extensionPos);
-            var folderName = filePrefix.concat('_jpg');
-            var builtInName = filePrefix.concat('_', builtInSizes[k], '.jpg');
-            var builtInPath = localPath.concat('\\', folderName, '\\', builtInName);
 
-            var builtInExistsLocally = false;
-            if(fs.existsSync(builtInPath)){
-                builtInExistsLocally = true;
-            }
+            var builtInPath = data.buildFilePath(jsonModel.getItem('imageStore'), categoryPath, fileData, builtInSizes[k]);
+            var builtInExistsLocally = data.checkFileExists(builtInPath);
 
             var jsonSizes = new JsonModel({
                 size: builtInSizes[k],
@@ -143,13 +117,17 @@ connection.initializeConnection().then(function(dbConnectionStatus){
             });
 
             jsonImage.addItem('sizes', jsonSizes);
+
         }
+
+        //custom size stuff
+        //...
 
         jsonModel.addItem('images', jsonImage);
 
     }
 
-    console.log(JSON.stringify(jsonModel));
+    console.log(JSON.stringify(jsonModel, null, " "));
 
 
 

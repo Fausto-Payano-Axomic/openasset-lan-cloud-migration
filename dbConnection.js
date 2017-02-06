@@ -23,7 +23,7 @@ DBConnection.prototype.initializeConnection = function(){
         });
 
         //connect to database
-        console.log('Connecting to database ' + self.database + '...');
+        //console.log('Connecting to database ' + self.database + '...');
 
         self.DBConnection.connect(function(error){
             if(error){
