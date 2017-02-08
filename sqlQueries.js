@@ -21,7 +21,9 @@ var sqlQueries = {
 
     settingsSqlQuery: 'SELECT code, value_json \
                        FROM global_setting \
-                       WHERE id in (2, 3, 15, 31, 46, 47, 63, 84, 85, 86, 161)',
+                       WHERE code in ("anonymousExcludeIPRanges", "anonymousIncludeIPRanges", "databaseSchemaVersion", \
+                                      "enableWebDownloads", "imageStoreAddress", "imageStoreDNSName", "licenseHolderCode", \
+                                      "publicDNSName", "publicPort", "publicProtocol")'
 
 };
 

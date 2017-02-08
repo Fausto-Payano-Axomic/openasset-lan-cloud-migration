@@ -3,11 +3,9 @@ var JsonModel = require('./JsonModel.js');
 var Data = require('./DataOperations.js');
 var queries = require('./sqlQueries.js');
 
-var fs = require('fs');
-
 //default database connection details
-var host = 'localhost';
-var database = 'mol001' //change to OpenAsset_4_0
+var host = '192.168.1.124';
+var database = 'OpenAsset_4_0' //change to OpenAsset_4_0
 var port = 3306;
 var user = 'openasset';
 var password = '0p3nass3t';
@@ -57,8 +55,8 @@ connection.initializeConnection().then(function(dbConnectionStatus){
     //get value of client code
     for(var i = 0; i < glbSettings.length; i++){
         if(glbSettings[i].code === 'licenseHolderCode'){
-            //Check scope of clientCode variable!!
-            var clientCode = data.cleanClientCode(glbSettings[i].valu_json);
+            //check scope of clientCode var
+            var clientCode = data.cleanClientCode(glbSettings[i].value_json);
         }
     }
 
@@ -74,92 +72,117 @@ connection.initializeConnection().then(function(dbConnectionStatus){
         images: []
     });
 
-    for(var j = 0; j < mainQuery.length; j++){
+    var loop = 0;
+    while(loop < mainQuery.length){
 
-        //return object of filename and extension
-        var fileData = data.getExtandPos(mainQuery[j].filename);
+        //First grab ID of image
+        var currentImgId = mainQuery[loop].id;
+
+        //ORIGNAL FILE
+
+        //return object of filename, extension and sizes folder name
+        var fileData = data.getExtandPos(mainQuery[loop].filename);
         //get type of category
-        var categoryPath = data.getCategoryPath(mainQuery[j].category, mainQuery[j].project_code);
-        //get local path of orginal file
-        var orignalPath = data.buildFilePath(jsonModel.getItem('imageStore'), categoryPath, fileData, false);
+        var categoryPath = data.getCategoryPath(mainQuery[loop].category, mainQuery[loop].project_code);
         //get file mime type
-        var mimeType = data.setMimeType(fileData);
+        var mimeType = data.setMimeType(fileData.extension);
         //check if original file exists locally
-        var originalExistsLocally = data.checkFileExists(orignalPath);
+        var originalExistsLocally = data.checkFileExists(imageStore, categoryPath, fileData);
 
         var jsonImage = new JsonModel({
-            filename: fileData.filename,
-            md5: mainQuery[j].md5_at_upload,
-            localPath: orignalPath,
+            filename: fileData.origFilename,
+            md5: mainQuery[loop].md5_at_upload,
+            filePath: categoryPath,
+            sizesFolder: fileData.folderName,
             type: mimeType,
             exists_locally: originalExistsLocally,
-            uploaded: {
-                status: false,
-                message: 'upload pending',
-            },
-            sizes: []
+            uploaded: 'upload pending', //return message from S3 upload will update this
+            sizes: [] //will hold one object for all built ins and one for each custom size
         });
 
+        //BUILTIN INS
+
+        var jsonBuiltIn = new JsonModel({
+            size: 'builtins',
+            exists_locally: '',
+            uploaded: {
+                thumbnail: 'upload pending',
+                webview: 'upload pending',
+                small: 'upload pending',
+                square: 'upload pending'
+            }
+        });
+
+        var exists_locally = { //will be updated to true if built in size is present on disk
+            "thumbnail": false,
+            "webview": false,
+            "small": false,
+            "square": false
+        };
+
+        //loop for each built in size
         for(var k = 0; k < builtInSizes.length; k++){
 
-            var builtInPath = data.buildFilePath(jsonModel.getItem('imageStore'), categoryPath, fileData, builtInSizes[k]);
+            var builtIn = builtInSizes[k];
+            var builtInFilename = fileData.builtInName[builtIn];
+            //generate built in file path
+            var builtInPath = imageStore.concat('\\', categoryPath, '\\', fileData.folderName, '\\', builtInFilename);
+            //check if built in size exists locally
             var builtInExistsLocally = data.checkFileExists(builtInPath);
 
-            var jsonSizes = new JsonModel({
-                size: builtInSizes[k],
-                localPath: builtInPath,
-                type: 'image/jpg',
-                exists_locally: builtInExistsLocally,
-                uploaded: {
-                    status: false,
-                    message: 'upload pending'
-                }
-            });
-
-            jsonImage.addItem('sizes', jsonSizes);
+            exists_locally[builtIn] = builtInExistsLocally;
 
         }
 
-        //custom size stuff
+        //update built in sizes object with result of local file check
+        jsonBuiltIn.addItem('exists_locally', exists_locally);
+
+        jsonImage.addItem('sizes', jsonBuiltIn);
+
+        //CUSTOM SIZES
+        var count = loop;
+        var nextCustomSize;
+
+        do{
+            var customFilename = fileData.folderPrefix;
+            customFilename = customFilename.concat('_', mainQuery[count].postfix, '.', mainQuery[count].suffix);
+            var customMimeType = 'image/' + mainQuery[count].suffix;
+
+            var customPath = imageStore.concat('\\', categoryPath, '\\', fileData.folderName, '\\', customFilename);
+            var customExistsLocally = data.checkFileExists(customPath);
+
+            var jsonCustom = new JsonModel({
+                size: mainQuery[count].postfix,
+                filename: customFilename,
+                type: customMimeType,
+                exists_locally: customExistsLocally,
+                uploaded: 'upload pending'
+            });
+
+            jsonImage.addItem('sizes', jsonCustom);
+
+            count++;
+            if(count < mainQuery.length){
+                nextCustomSize = mainQuery[count].id;
+            } else {
+                break;
+            }
+        }
+        while(currentImgId === nextCustomSize);
+
+
+
+
         //...
 
         jsonModel.addItem('images', jsonImage);
 
+        loop = count;
     }
 
+
+
     console.log(JSON.stringify(jsonModel, null, " "));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -175,6 +198,8 @@ connection.initializeConnection().then(function(dbConnectionStatus){
             break;
         case 'ECONNREFUSED':
             break;
+        case 'ETIMEDOUT':
+            break;
         case 'ER_ACCESS_DENIED_ERROR':
             break;
         default:
@@ -186,74 +211,3 @@ connection.initializeConnection().then(function(dbConnectionStatus){
     }
 
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-// //details for database to connect to
-// //need to comment out 'skip-networking' in my.ini file to allow remote connection
-// var dbConnection = mysql.createConnection({
-//     host: host,
-//     database: database,
-//     port: port,
-//     user: user,
-//     password: password
-// });
-//
-// //connect to database
-// console.log('Connecting to database ' + database + '...');
-// dbConnection.connect(function(err){
-//     if(err) throw err;
-//     console.log('Connection to database ' + database + ' established!');
-// });
-//
-// getAliveImagesAndSizes(mainSqlQuery).then(function(aliveImages){
-//     console.log(aliveImages);
-//     dbConnection.end(function(err){});
-// }).catch(function(error){
-//     console.log(error);
-//     dbConnection.end(function(err){});
-// });
