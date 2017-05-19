@@ -6,6 +6,8 @@ var sqlQueries = {
     countAliveImages: 'SELECT count(*) AS images from image where alive=1',
 
     //main SQL query
+    //returns all alive images and their alive sizes along with project, category
+    //fiel type, file size information
     mainSqlQuery: 'SELECT image.id, category.storage_name AS category, project.storage_name AS project_code, \
                           image.filename, image.md5_at_upload, \
                           image.original_filesize, image.square_filesize, image.thumbnail_filesize, \
@@ -19,6 +21,7 @@ var sqlQueries = {
                    ON default_image_size.file_format_id=file_format.id \
                    WHERE image.alive=1 AND default_image_size.alive=1',
 
+    //get info on global database settings
     settingsSqlQuery: 'SELECT code, value_json \
                        FROM global_setting \
                        WHERE code in ("anonymousExcludeIPRanges", "anonymousIncludeIPRanges", "databaseSchemaVersion", \

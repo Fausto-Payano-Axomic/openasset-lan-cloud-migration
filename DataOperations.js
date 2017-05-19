@@ -2,6 +2,7 @@ var fs = require('fs');
 
 function DataOperations(){}
 
+//need to remove square brackets from client code returned from database
 DataOperations.prototype.cleanClientCode = function(data){
     var clientCode = data;
     clientCode = clientCode.replace('[','');
@@ -17,7 +18,7 @@ DataOperations.prototype.cleanImageStorePath = function(data){
     return imageStore;
 }
 
-
+//determine file type based on filename of original image
 DataOperations.prototype.getExtandPos = function(data){
     var filename = data;
     var extensionPos = filename.lastIndexOf('.');
@@ -91,8 +92,8 @@ DataOperations.prototype.setMimeType = function(extension){
     }
 }
 
-
-
+//currently only checks if a file called the same as the filename exisits locally on disk
+//need a more robust file checking method
 DataOperations.prototype.checkFileExists = function(imageStore, categoryPath, fileData){
     var path = '';
     if(arguments.length === 3){
