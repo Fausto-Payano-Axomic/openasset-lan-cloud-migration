@@ -3,13 +3,48 @@ var JsonModel = require('./JsonModel.js');
 var Data = require('./DataOperations.js');
 var queries = require('./sqlQueries.js');
 
-//default database connection details
-//change these to reflect the settings on your machine
-var host = 'localhost';
-var database = 'currie'
-var port = 3306;
-var user = 'openasset';
-var password = '0p3nass3t';
+//using yargs to allow input from command line
+var options = require('yargs')
+    .usage('Usage: main.js [-h "hostname"] [-d "database name"] [-p "database port"] [-u "database username"] [-pwd "database password"]')
+    .option('h', {
+        alias: 'hostname',
+        demand: true,
+        describe: 'The hostname of the database server e.g. "localhost"'
+    })
+    .option('d', {
+        alias: 'database',
+        demand: true,
+        describe: 'The name of the database e.g. "openasset_4_0"'
+    })
+    .option('p', {
+        alias: 'port',
+        demand: false,
+        default: 3306,
+        describe: 'Database port'
+    })
+    .option('u', {
+        alias: 'username',
+        demand: false,
+        default: 'openasset',
+        describe: 'Database username'
+    })
+    .option('pwd', {
+        alias: 'password',
+        demand: false,
+        default: '0p3nass3t',
+        describe: 'Database password'
+    })
+    .alias('?', 'help')
+    .help('help')
+    .argv;
+
+//***end yargs configuiration***//
+
+var host = options.h;
+var database = options.d;
+var port = options.p;
+var user = options.u;
+var password = options.pwd;
 
 var connection = new DBConnection(host, database, port, user, password);
 
@@ -18,12 +53,12 @@ var mainQuery = [];
 var imgStore = [];
 var glbSettings = [];
 var aliveImages = [];
-var builtInSizes = [
-    'thumbnail',
-    'webview',
-    'small',
-    'square'
-];
+// var builtInSizes = [
+//     'thumbnail',
+//     'webview',
+//     'small',
+//     'square'
+// ];
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
