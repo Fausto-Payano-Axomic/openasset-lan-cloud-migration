@@ -1,4 +1,6 @@
 var fs = require('fs');
+var readChunk = require('read-chunk'); //https://github.com/sindresorhus/read-chunk
+var fileType = require('file-type'); //https://github.com/sindresorhus/file-type
 
 function DataOperations(){}
 
@@ -84,30 +86,51 @@ DataOperations.prototype.getCategoryPath = function(category, projectCode){
 // }
 
 
-DataOperations.prototype.setMimeType = function(extension){
-    if(extension === 'pdf'){
-        return 'application/pdf';
-    } else {
-        return 'image/' + extension;
-    }
-}
+// DataOperations.prototype.setMimeType = function(extension){
+//     if(extension === 'pdf'){
+//         return 'application/pdf';
+//     } else {
+//         return 'image/' + extension;
+//     }
+// }
 
-//currently only checks if a file called the same as the filename exisits locally on disk
-//need a more robust file checking method
 DataOperations.prototype.checkFileExists = function(imageStore, categoryPath, fileData){
     var path = '';
+    //for original sizes
     if(arguments.length === 3){
         path = imageStore.concat('\\', categoryPath, '\\', fileData.origFilename);
+    //for built-in, custom sizes
     } else if(arguments.length === 1){
         path = arguments[0];
     }
 
-    if(fs.existsSync(path)){
-        return true;
-    } else {
-        return false;
+    try{
+        //get first 8 bytes of file
+        var fileHeaderBytes = readChunk.sync(path, 0, 8);
+        //check bytes against magic numbers http://www.astro.keele.ac.uk/oldusers/rno/Computing/File_magic.html#Image
+        var fileExisitsObj = fileType(fileHeaderBytes);
+
+        //default object returned from fileType() is like { ext: 'jpg', mime: 'image/jpeg' }
+        //adding exists value as boolean true or error
+
+        if(typeof fileExisitsObj === 'object'){
+            fileExisitsObj['exists'] = true;
+            return fileExisitsObj;
+        } else {
+            return {
+                mime: 'n/a',
+                exists: 'Directory or file does not exist at ' + path
+            };
+        }
+    } catch(error) {
+        return {
+            mime: 'n/a',
+            exists: 'Directory or file does not exist at ' + error.path
+        };
     }
+
 }
+
 
 
 module.exports = DataOperations;

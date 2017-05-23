@@ -1,5 +1,7 @@
+//using node mysql https://github.com/mysqljs/mysql
 var mysql = require('mysql');
 
+//constructor
 function DBConnection(host, database, port, user, password){
     this.host = host,
     this.database = database,
@@ -9,6 +11,7 @@ function DBConnection(host, database, port, user, password){
     this.DBConnection = '';
 }
 
+//wrapping createConnection and connect mysql functions to return a promise
 DBConnection.prototype.initializeConnection = function(){
     var self = this;
     return new Promise(function(resolve, reject){
@@ -38,6 +41,7 @@ DBConnection.prototype.initializeConnection = function(){
     });
 }
 
+//wrapper for query function
 DBConnection.prototype.runQuery = function(sqlQuery){
     var self = this;
     return new Promise(function(resolve, reject){
@@ -55,6 +59,7 @@ DBConnection.prototype.runQuery = function(sqlQuery){
     });
 }
 
+//wrapper for end function
 DBConnection.prototype.closeConnection = function(){
     var self = this;
     return new Promise(function(resolve, reject){
@@ -71,6 +76,5 @@ DBConnection.prototype.closeConnection = function(){
 
     });
 }
-
 
 module.exports = DBConnection;

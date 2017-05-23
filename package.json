@@ -18,7 +18,9 @@
   "homepage": "https://github.com/adesmier/openasset-migration#readme",
   "dependencies": {
     "bluebird": "^3.4.7",
+    "file-type": "^4.3.0",
     "mysql": "^2.13.0",
+    "read-chunk": "^2.0.0",
     "yargs": "^8.0.1"
   }
 }
